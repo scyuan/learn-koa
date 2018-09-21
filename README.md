@@ -34,5 +34,35 @@ ctx利用了上下文（context）机制，将原来的req,res合二为一，并
 ##### use
 koa的核心。
 
+### 创建一个ctx
 
+通过createContext创建一个ctx，我的理解就是讲request和response添加到ctx这个对象当中
 
+```JavaScript
+createContext(req, res){
+    // Object.create()方法是继承this.context，并且ctx增加属性是不影响原属性也就是this.context
+    const ctx = Object.create(this.context);
+    // 以前没用到过，相当于
+    // const request = Object.create(this.request);
+    // const ctx.request = Object.create(this.request);
+    const request = ctx.request = Object.create(this.request);
+    const response = ctx.response = Object.create(this.response);
+
+    ctx.req = request.req = response.req = req;
+    ctx.res = request.res = response.res = res;
+    request.ctx = response.ctx = ctx;
+    request.response = response;
+    response.request = request;
+    return ctx;
+}
+```
+在app.js中
+```JavaScript
+app.use((ctx)=>{
+    console.log(ctx.req.url);              // 打印  '/'
+    console.log(ctx.request.req.url);      // 打印  '/'
+    console.log(ctx.url);                  // 打印  undefined
+})
+```
+
+### 从自定义的request对象取值，并拓展更多熟悉，如query、path等。直接从ctx取值
