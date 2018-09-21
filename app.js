@@ -1,8 +1,8 @@
 let koa = require('./application');
 let app = new koa();
 
-app.use((req, res)=>{
-    res.end('hello world')
+app.use((ctx)=>{
+    console.log(ctx);
 })
 app.listen(3000);
 
