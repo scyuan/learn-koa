@@ -23,4 +23,13 @@ defineGetter('request','url');
     由于ctx继承了context（在application.js中const ctx = Object.create(this.context)）。所以当ctx.url，触发了绑定函数，返回this.request.url。（this即为ctx）
 */
 
+function defineSetter(prop, name){
+    context.__defineSetter__(name,function(val){
+        this[prop][name] = val;
+    })
+}
+
+defineSetter('response',"body");
+defineGetter('response',"body");
+
 module.exports = context;

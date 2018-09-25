@@ -43,7 +43,7 @@ class Koa extends EventEmitter{
         // 封装好ctx后，通过回调参数返回给用户
         this.fn(ctx);
         // ctx.body用来输出页面，后面会如何说道如何绑定数据到ctx.body
-        res.end(ctx.body);
+        res.end(ctx.response.body);
     }
     listen(...args){
         // let server = http.createServer(this.fn);

@@ -1,3 +1,10 @@
-let proto ={}
-
-module.exports = proto;
+let response ={
+    set body(value){
+        this.res.statusCode = 200;
+        this._body = value;
+    },
+    get body(){
+        return this._body;
+    }
+}
+module.exports = response;

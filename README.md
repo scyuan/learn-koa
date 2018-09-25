@@ -138,3 +138,61 @@ app.use((ctx)=>{
     console.log(ctx.request.url);          // 打印  '/'
 })
 ```
+
+### 实现ctx.body
+
+koa的api，输出数据到页面既不是res.end('xxx')也不是res.send('xxx')，而是ctx.body = 'xxx'。
+
+#### 首先修改response
+
+```JavaScript
+let response ={
+    set body(value){
+        this.res.statusCode = 200;
+        this._body = value;
+    },
+    get body(){
+        return this._body;
+    }
+}
+```
+在application.js中
+```JavaScript
+handleRequest(req, res){
+    // 创建ctx
+    let ctx = this.createContext(req, res);
+    // 封装好ctx后，通过回调参数返回给用户
+    this.fn(ctx);
+    // ctx.body用来输出页面，后面会如何说道如何绑定数据到ctx.body
+    // 将ctx.response.body输出
+    res.end(ctx.response.body);
+}
+```
+在app.js中,可以直接设置ctx.response.body = 'hello world',这样就会输出hello world了
+
+```JavaScript
+app.use((ctx)=>{
+    console.log(ctx.req.url);
+    console.log(ctx.request.req.url);
+    // 通过自定义的request对象，可以直接通过ctx的request对象获取url了
+    console.log(ctx.request.url);
+    console.log(ctx.url);
+
+    ctx.response.body = 'hello world';
+    
+})
+```
+这个时候是ctx.response.body,并不是ctx.body。同意通过contex代理一下
+
+context.js
+```JavaScript
+function defineSetter(prop, name){
+    context.__defineSetter__(name,function(val){
+        this[prop][name] = val;
+    })
+}
+defineSetter('response','body');
+defineGetter('response','body');
+```
+
+这个时候就可以直接使用ctx.body了。
