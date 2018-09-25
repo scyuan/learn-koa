@@ -10,10 +10,9 @@ class Koa extends EventEmitter{
         super();
         this.fn;
         // 将三个模块保存，全局的放到实例上
-        // 但是我明白，context、request、response三个变量不存在，这样赋值不会报错吗？
         this.context = context;
         this.request = request;
-        this.response = response
+        this.response = response;
     }
     use(fn){
         this.fn = fn;

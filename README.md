@@ -61,8 +61,40 @@ createContext(req, res){
 app.use((ctx)=>{
     console.log(ctx.req.url);              // 打印  '/'
     console.log(ctx.request.req.url);      // 打印  '/'
+    // 这个时候还无法直接在ctx包括ctx.request取url等值
     console.log(ctx.url);                  // 打印  undefined
+    console.log(ctx.request.url);          // 打印  undefined
+})
+```
+### 从自定义的request对象取值，并拓展更多熟悉，如query、path等。直接从ctx取值
+
+#### 从自定义的request取值
+
+```JavaScript
+let request = { 
+    // get 用法为对象的访问器类似于下面
+    // Object.defineProperty('name',{
+    //    set:function(value){
+    //          this.name = value;
+    //    },
+    //    get:function(){
+    //        return this.name;
+    //    }
+    // })
+    get url(){
+        //这样可通过ctx.request.url 直接取值了。不需要再通过req
+        return this.req.url;
+    }
+}
+```
+所以在app.js中
+```JavaScript
+app.use((ctx)=>{
+    console.log(ctx.req.url);              // 打印  '/'
+    console.log(ctx.request.req.url);      // 打印  '/'
+    console.log(ctx.url);                  // 打印  undefined
+    console.log(ctx.request.url);          // 打印  '/'
 })
 ```
 
-### 从自定义的request对象取值，并拓展更多熟悉，如query、path等。直接从ctx取值
+
