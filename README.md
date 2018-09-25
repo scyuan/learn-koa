@@ -97,4 +97,44 @@ app.use((ctx)=>{
 })
 ```
 
+#### 直接从ctx取值
 
+需要通过一个代理实现
+
+修改context.js
+```JavaScript
+let context = {}
+// 创建一个defineGetter函数，参数分别是需要代理的对象和对象上的属性
+function defineGetter(prop, name){
+    // 每个对象都有一个__defineGetter__函数，可以用这个方法实现代理。
+    context.__defineGetter__(name, function(){
+        // 这里的this是ctx，为什么是ctx？
+        return this[prop][name];
+    })
+}
+defineGetter('request','url');
+module.exports = context;
+```
+怎么实现代理？
+
+**__defineGetter__**方法可以将一个函数绑定在当前对象的指定属性上，当那个属性的值被读取时，所绑定的函数就会被调用。
+上诉例子：
+```JavaScript
+context.__defineGetter__(name, function(){
+        // 这里的this是ctx，为什么是ctx？
+        return this[prop][name];
+    })
+```
+defineGetter('request','url');
+当调用context.url时，出发绑定函数，return this.request.url；
+由于ctx继承了context（在application.js中const ctx = Object.create(this.context)）。所以当ctx.url，触发了绑定函数，返回this.request.url。（this即为ctx）
+
+所以在app.js中
+```JavaScript
+app.use((ctx)=>{
+    console.log(ctx.req.url);              // 打印  '/'
+    console.log(ctx.request.req.url);      // 打印  '/'
+    console.log(ctx.url);                  // 打印  '/'
+    console.log(ctx.request.url);          // 打印  '/'
+})
+```
