@@ -271,24 +271,31 @@ app.use((ctx, next) => {
 
 ```JavaScript
 app.use(async (ctx, next) => {
-    await console.log(1)
-    next()
+    console.log(1)
+    await next()
     console.log(2)
 })
 app.use(async (ctx, next) => {
-    await console.log(3)
-    next()
+    console.log(3)
+    let p = new Promise((resolve, roject) => {
+        setTimeout(() => {
+            console.log('3.5')
+            resolve()
+        }, 1000)
+    })
+    await p.then()
+    await next()
     console.log(4)
 })
 app.use(async (ctx, next) => {
-    await console.log(5)
+    console.log(5)
     next()
     console.log(6)
 })
 ```
-结果打印1、3、2、5、4、6
+结果打印1、3、2、隔1秒 3.5、5、6、4
 
-为什么会这样也是因为async函数的机制，每次遇到await关键字时，会跳出async函数，并执行完后面的语句再回到函数执行后面的语句
+为什么会这样也是因为async函数的机制，await是一个让出线程的标志。**await后面的函数会先执行一遍**，然后就会跳出整个async函数来执行后面js栈的代码。
 
 ```JavaScript
 async function  demo() {
@@ -303,7 +310,32 @@ console.log('d');
 a,c,d,b
 ```
 
-解释：首先进入到第一个函数，执行`await console.log(1)`，**打印1**，接下来由于外面没有函数取执行，所以继续执行`next()`，然后进入到第二个函数，执行`await console.log(e)`，**打印3**，这个时候会跳出第二个函数，这个时候外面就是第一个函数的`console.log(2)`，然后 **打印2**。然后再回到第二个函数，执行下面的语句也就是`next()`，然后执行第三个函数的`await console.log(5)`。。。以此类推。
+解释：首先进入到第一个函数，执行
 
+`console.log(1)`，**打印1**，然后执行
+
+`await next()`，然后跳出第一个函数，但是外面没有语句执行，所以进入第二个函数，执行
+
+`console.log(3)`，**打印3**，执行p的初始化（Promise新建后会立即执行），然后执行
+
+`await p.then()`，执行p.then()，然后执行完后（由于是个异步，所以等待返回），跳出第二个函数，回到第一个函数，执行
+
+`console.log(2)`，**打印2**，然后回到第二个函数，等待p.then()返回，等待1s，
+
+`console.log(3.5)`，**打印3.5**，await返回后，才能执行下面的语句，
+
+`await next()`，进入第三个函数，执行
+
+`console.log(5)`，**打印5**，然后执行，
+
+`await next()`，没有next()函数了，则执行
+
+`console.log(5)`，**打印5**，然后回到第二个函数，执行下面的，
+
+`console.log(6)`，**打印6**。结束
+
+而正确顺序应该是1、3、3.5、5、6、4、2。所以我们需要把每个回调函数封装成Promise
+
+反过来想想为什么会出现1、3、2、3.5、5、6、4的顺序？
 
 

@@ -24,9 +24,8 @@ class Koa extends EventEmitter{
     compose(middlewares, ctx){
         function dispatch(index){
             if(index == middlewares.length ) return Promise.resolve();  // 最后一次执行直接返回；
-            let middleware = middlewares[index]        // 取出函数
-            //middleware(ctx, () => dispatch(index+1))   // 调用并传入ctx和下一个被调用的函数，用户通过next()时执行该函数
-            return Promise.resolve(middleware(ctx, () => dispatch(index+1)))
+            let middleware = middlewares[index] // 取出函数
+            return Promise.resolve(middleware(ctx, () => dispatch(index+1)))   // 调用并传入ctx和下一个被调用的函数，用户通过next()时执行该函数
         }
         return dispatch(0);
     }
@@ -55,13 +54,12 @@ class Koa extends EventEmitter{
         // 创建ctx
         let ctx = this.createContext(req, res);
         // 封装好ctx后，通过回调参数返回给用户
-        // this.fn(ctx); 多次调用use,所以改成；
-        // this.compose(this.middlewares,ctx);
         let fn = this.compose(this.middlewares,ctx);
+        // ctx.body用来输出页面，后面会如何说道如何绑定数据到ctx.body
         fn.then(()=>{
-            // ctx.body用来输出页面，后面会如何说道如何绑定数据到ctx.body
-            res.end(ctx.response.body);
+            res.end(ctx.body);
         })
+        
     }
     listen(...args){
         // let server = http.createServer(this.fn);

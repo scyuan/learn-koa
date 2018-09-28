@@ -2,17 +2,24 @@ let koa = require('./application');
 let app = new koa();
 
 app.use(async (ctx, next) => {
-    await console.log(1)
+    console.log(1)
     await next()
     console.log(2)
 })
 app.use(async (ctx, next) => {
-    await console.log(3)
+    console.log(3)
+    let p = new Promise((resolve, roject) => {
+        setTimeout(() => {
+            console.log('3.5')
+            resolve()
+        }, 1000)
+    })
+    await p.then()
     await next()
     console.log(4)
 })
 app.use(async (ctx, next) => {
-    await console.log(5)
+    console.log(5)
     await next()
     console.log(6)
 })
@@ -28,6 +35,8 @@ app.use((ctx)=>{
     
 })
 app.listen(3000);
+
+
 
 
 console.log('http://localhost:3000');
