@@ -196,3 +196,114 @@ defineGetter('response','body');
 ```
 
 这个时候就可以直接使用ctx.body了。
+
+### 实现多个use
+
+实现多个use需要使用到一个compose函数，说通俗点就是一个递归函数，在第一个中间件函数的next回调调到去执行下一个中间件函数，当该next回调函数执行完后再执行完第一个中间件函数。
+
+application.js
+
+```JavaScript
+// 构造函数，原本只能一个，通过this.fn保存中间件函数，由于需要支持多个use，所以每次use都将函数保存到一个list中
+// this.fn; 改成：
+this.middlewares = [] // 按顺序存放中间件
+
+// use函数
+use(fn){
+    // this.fn = fn;
+    // 每次use将回调函数存进数组
+    this.middlewares.push(fn);
+}
+
+// 最关键的compose函数，实际上是一个实现递归的函数。说实话还是挺神奇的
+compose(middlewares, ctx){
+    function dispatch(index){
+        if(index == middlewares.length ) return ;  // 最后一次执行直接返回；
+        let middleware = middlewares[index]        // 取出函数
+        middleware(ctx, () => dispatch(index+1))   // 调用并传入ctx和下一个被调用的函数，用户通过next()时执行该函数
+    }
+    dispatch(0);
+}
+
+// handleRequest函数，调用compose函数
+// this.fn(ctx); 多次调用use,所以改成；
+this.compose(this.middlewares,ctx);
+
+```
+
+app.js
+
+```JavaScript
+app.use((ctx, next) => {
+    console.log(1)
+    next()
+    console.log(2)
+})
+app.use((ctx, next) => {
+    console.log(3)
+    next()
+    console.log(4)
+})
+app.use((ctx, next) => {
+    console.log(5)
+    next()
+    console.log(6)
+})
+```
+
+执行：
+
+```Bash
+1
+3
+5
+/
+/
+/
+/
+6
+4
+2
+```
+### 把每个回调保证成Promise以实现异步
+
+试试把中间件函数改成async函数之后，然后再看打印顺序，正确的打印顺序为1、3、5、6、5、2
+
+```JavaScript
+app.use(async (ctx, next) => {
+    await console.log(1)
+    next()
+    console.log(2)
+})
+app.use(async (ctx, next) => {
+    await console.log(3)
+    next()
+    console.log(4)
+})
+app.use(async (ctx, next) => {
+    await console.log(5)
+    next()
+    console.log(6)
+})
+```
+结果打印1、3、2、5、4、6
+
+为什么会这样也是因为async函数的机制，每次遇到await关键字时，会跳出async函数，并执行完后面的语句再回到函数执行后面的语句
+
+```JavaScript
+async function  demo() {
+    await console.log('a');
+    console.log('b');
+}
+demo();
+console.log('c');
+console.log('d');
+
+打印顺序
+a,c,d,b
+```
+
+解释：首先进入到第一个函数，执行`await console.log(1)`，**打印1**，接下来由于外面没有函数取执行，所以继续执行`next()`，然后进入到第二个函数，执行`await console.log(e)`，**打印3**，这个时候会跳出第二个函数，这个时候外面就是第一个函数的`console.log(2)`，然后 **打印2**。然后再回到第二个函数，执行下面的语句也就是`next()`，然后执行第三个函数的`await console.log(5)`。。。以此类推。
+
+
+
