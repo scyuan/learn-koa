@@ -43,10 +43,4 @@ app.use(async (next) => {
     console.log(6)
 })
 
-async function demo(){
-    console.log(1);
-    await console.log(2);
-    console.log(3);
-}
-
 app.run();
